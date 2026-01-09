@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ستۆدیۆی پالێتی ڕەنگی مۆدێرن</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            padding: 40px 20px;
+            text-align: center;
+            background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1rem;
+            font-weight: 300;
+        }
+
+        .controls {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* تنسيق زر الكاميرا الجديد */
+        .btn-camera {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* واجهة الكاميرا المنبثقة */
+        #cameraOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #video {
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            border: 2px solid #764ba2;
+        }
+
+        select {
+            background: #1a1a1a;
+            color: white;
+            border: 1px solid #333;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 15px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .palettes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .palette-card {
+            background: #1a1a1a;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #2a2a2a;
+            position: relative;
+        }
+
+        .palette-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .palette-name {
+            font-weight: 600;
+            font-size: 18px;
+            color: #fff;
+        }
+
+        .colors-container {
+            display: flex;
+            height: 200px;
+        }
+
+        .color-swatch {
+            flex: 1;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .color-label {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            padding: 15px 10px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            color: white;
+            font-size: 12px;
+            text-align: center;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .color-swatch:hover .color-label { opacity: 1; }
+
+        .notification {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            opacity: 0;
+            transition: 0.4s;
+            z-index: 3000;
+        }
+
+        .notification.show { opacity: 1; }
+
+        .mode-toggle { display: flex; gap: 10px; }
+        .mode-btn {
+            background: #1a1a1a; border: 1px solid #333; color: #888;
+            padding: 10px 20px; border-radius: 10px; cursor: pointer;
+        }
+        .mode-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ستۆدیۆی پالێتی ڕەنگی مۆدێرن</h1>
+        <p class="subtitle">ڕەنگی جوان و مۆدێرن بۆ پڕۆژەکانت دروست بکە</p>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="generatePalettes()">✨ دروستکردنی پالێتی نوێ</button>
+        
+        <button class="btn btn-camera" onclick="openCamera()">📸 کردنەوەی کامێرا</button>
+        
+        <select id="schemeType" onchange="generatePalettes()">
+            <option value="modern">مۆدێرن</option>
+            <option value="monochromatic">تاک ڕەنگ</option>
+            <option value="pastel">Pastel</option>
+            <option value="vibrant">زیندوو</option>
+        </select>
+
+        <div class="mode-toggle">
+            <button class="mode-btn active" onclick="setMode('grid')">تۆڕ</button>
+            <button class="mode-btn" onclick="setMode('list')">لیست</button>
+        </div>
+    </div>
+
+    <div id="cameraOverlay">
+        <video id="video" autoplay playsinline></video>
+        <div class="controls">
+            <button class="btn" onclick="captureAndAnalyze()">📸 وێنە بگرە و شیکاری بکە</button>
+            <button class="btn" style="background:#444" onclick="closeCamera()">داخستن</button>
+        </div>
+        <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+
+    <div class="container">
+        <div class="palettes-grid" id="palettes"></div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        const paletteThemes = ['سایبەرپانک', 'نیوەشەو شین', 'خەونی نیۆن', 'مينيماليستی', 'ئۆقیانوس', 'خۆرئاوابوون'];
+        
+        // --- وظائف الكاميرا المضافة حديثاً ---
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const overlay = document.getElementById('cameraOverlay');
+
+        async function openCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                video.srcObject = stream;
+                overlay.style.display = 'flex';
+            } catch (err) { alert("Error opening camera: " + err); }
+        }
+
+        function closeCamera() {
+            const stream = video.srcObject;
+            if (stream) stream.getTracks().forEach(t => t.stop());
+            overlay.style.display = 'none';
+        }
+
+        function captureAndAnalyze() {
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            const colorsMap = {};
+            const uniqueColors = new Set();
+
+            for (let i = 0; i < imageData.length; i += 20) {
+                const r = imageData[i], g = imageData[i+1], b = imageData[i+2];
+                const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+                uniqueColors.add(hex);
+                colorsMap[hex] = (colorsMap[hex] || 0) + 1;
+            }
+
+            const sortedColors = Object.entries(colorsMap).sort((a,b) => b[1]-a[1]).slice(0, 5).map(e => e[0]);
+            
+            // إضافة الباليت المستخرج إلى القائمة
+            addCustomPalette("ڕەنگەکانی وێنەکە", sortedColors);
+            showNotification(`شیکاری تەواو: ${uniqueColors.size.toLocaleString()} ڕەنگ دۆزرایەوە`);
+            closeCamera();
+        }
+
+        function addCustomPalette(name, colors) {
+            const container = document.getElementById('palettes');
+            const card = createPaletteCard(name, colors);
+            container.prepend(card); // وضعه في البداية
+        }
+
+        // --- الكود الأصلي الخاص بك ---
+        function hslToHex(h, s, l) {
+            l /= 100;
+            const a = s * Math.min(l, 1 - l) / 100;
+            const f = n => {
+                const k = (n + h / 30) % 12;
+                const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+                return Math.round(255 * color).toString(16).padStart(2, '0');
+            };
+            return `#${f(0)}${f(8)}${f(4)}`;
+        }
+
+        function createPaletteCard(theme, colors) {
+            const card = document.createElement('div');
+            card.className = 'palette-card';
+            card.innerHTML = `
+                <div class="palette-header">
+                    <span class="palette-name">${theme}</span>
+                    <button class="copy-all-btn" onclick='copyAllColors(${JSON.stringify(colors)})' style="background:#2a2a2a; border:none; color:#888; padding:8px; border-radius:8px; cursor:pointer">کۆپی هەموو</button>
+                </div>
+                <div class="colors-container">
+                    ${colors.map(color => `
+                        <div class="color-swatch" style="background-color: ${color}" onclick="copyToClipboard('${color}')">
+                            <div class="color-label">${color}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            return card;
+        }
+
+        function generatePalettes() {
+            const container = document.getElementById('palettes');
+            const type = document.getElementById('schemeType').value;
+            container.innerHTML = '';
+            for (let i = 0; i < 8; i++) {
+                const h = Math.floor(Math.random() * 360);
+                const colors = Array(5).fill(0).map((_, j) => hslToHex(h, 70, 20 + (j * 15)));
+                const theme = paletteThemes[Math.floor(Math.random() * paletteThemes.length)];
+                container.appendChild(createPaletteCard(theme, colors));
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => showNotification(`کۆپی کرا: ${text}`));
+        }
+
+        function copyAllColors(colors) {
+            navigator.clipboard.writeText(colors.join(', ')).then(() => showNotification('هەموو ڕەنگەکان کۆپی کران!'));
+        }
+
+        function showNotification(message) {
+            const n = document.getElementById('notification');
+            n.textContent = message;
+            n.classList.add('show');
+            setTimeout(() => n.classList.remove('show'), 3000);
+        }
+
+        function setMode(mode) {
+            const grid = document.querySelector('.palettes-grid');
+            grid.style.gridTemplateColumns = mode === 'list' ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))';
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(mode === 'list' ? 'لیست' : 'تۆڕ')));
+        }
+
+        generatePalettes();
+    </script>
+</body>
+</html>
